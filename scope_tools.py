@@ -11,6 +11,7 @@ import pyjq
 from passivetotal.libs.dns import DnsRequest
 from passivetotal.libs.dns import DnsResponse
 from nslookup import Nslookup
+import xml.etree.ElementTree as ElementTree
 
 def gen_network(st):
 	st = st.strip()
@@ -87,7 +88,77 @@ def resolve_domains(domains, dns_servers = [], only_ips=False, only_in_scope=Non
         result = {k: result[k] for k in filtered_ips}
     result = {k : result[k] for k in sorted(result,key=dword_from_ip)}
     return result
-    
+
+def get_http_from_nmap(nmap_filename):
+    root = ElementTree.parse(nmap_filename).getroot()
+    hosts = root.findall('host')
+
+    results = []
+
+    for host in hosts:
+        address = host.find('address')
+        if address.attrib['addrtype']!='ipv4':
+            print ('host %s is not ipv4'%address.attrib['addr'])
+            time() #continue
+        ip = address.attrib['addr']
+        ports = host.findall('ports/port')
+        for port in ports:
+            if port.attrib['protocol']!='tcp':
+                continue
+            portnum = port.attrib['portid']
+            state = port.find('state')
+            if state.attrib['state']!='open':
+                continue
+            service = port.find('service')
+            if 'http' not in service.attrib['name']:
+                continue
+            ssl=False
+            if ('tunnel' in service.attrib) and (service.attrib['tunnel']=='ssl'):
+                ssl=True
+            results.append((ip,portnum,ssl))
+    return results
+
+
+def parse_ip_domain_file(filename):
+
+    data = open(filename).read().split('\n')
+    results = {}
+    for l in data:
+        parts = l.split('\t')
+        if len(parts)!=2:
+            continue
+        if parts[0] in results:
+            results[parts[0]].append(parts[1])
+        else:
+            results[parts[0]] = [parts[1]]
+    return results
+
+def build_urls_from_nmap(nmap_filename,ip_domains_filename = None,one_per_port = False):
+    urls = get_http_from_nmap(nmap_filename)
+    if ip_domains_filename is None:
+        return [('https' if url[2] else 'http', url[0], url[1], url[0]) for url in urls]
+    ip_domains_table = parse_ip_domain_file(ip_domains_filename)
+    results = []
+
+    results_other = []
+
+    for ip,port,ssl in urls:
+        if ip not in ip_domains_table:
+            #u = '%s://%s:%s'%('https' if ssl else 'http', ip, port)
+            results.append(('https' if ssl else 'http', ip, port,ip))
+            continue
+        
+        #u = '%s://%s:%s'%('https' if ssl else 'http', ip_domains_table[ip][0], port)
+        results.append(('https' if ssl else 'http', ip, port,ip_domains_table[ip][0]))
+        #results.append((u,ip))
+        if one_per_port:
+        	continue
+        for domain in ip_domains_table[ip][1:]:
+            #u = '%s://%s:%s'%('https' if ssl else 'http', domain, port)
+            results_other.append(('https' if ssl else 'http', ip, port,domain))
+            #results.append((u,ip))
+    return results+results_other
+
 def read_scope_file(file_name):
 	scope = open(file_name).read()
 	parsed = read_scope(scope)
@@ -100,9 +171,8 @@ def get_scope(args):
 	return read_scope_file(args.scope)
 
 
-
 def main():
-	modes = ['parse_scope','reverse','resolve']
+	modes = ['parse_scope','reverse','resolve','nmap_http']
 	parser = argparse.ArgumentParser()
 	parser.add_argument("mode", help="mode - one of %s"%str(modes), choices= modes)
 	parser.add_argument("-s","--scope",	help = "scope file")
@@ -110,6 +180,18 @@ def main():
 	parser.add_argument("-r","--resolver", help = "DNS resolver", action='append')
 	parser.add_argument("--only-ips", help = "print only ips",default=False, action='store_true')
 	parser.add_argument("--only-in-scope", help = 'file with scope ips')
+	parser.add_argument('--nmap', help='nmap XML scan results')
+	parser.add_argument('--ips-domains', 
+					help = 'file with \'IP\tdomain\' per line, result of \'resolve\' mode')
+	parser.add_argument('--one-per-port', 
+					help = 'return only one line for every nmap port even if more than 1 domain resolve to this IP',
+					default=False, 
+					action='store_true')
+	url_formats = ['dirsearch','ffuf']
+	parser.add_argument('--url-format',
+					help ='one of %s'%str(url_formats),
+					choices=url_formats,
+					default='dirsearch')
 	'''parser.add_argument("-c","--column",
 						help="column names. For get mode could by comma separated array of columns")
 	parser.add_argument("-w", "--where", 
@@ -148,8 +230,17 @@ def main():
 		else:
 			for ip in res:
 				print ('\n'.join(['%s\t%s'%(ip,domain) for domain in res[ip]]))
-
-
+	if args.mode == 'nmap_http':
+		if args.nmap is None:
+			print ('--nmap required for this mode')
+			exit(1)
+		urls = build_urls_from_nmap(args.nmap,
+									ip_domains_filename = args.ips_domains,
+									one_per_port=args.one_per_port)
+		if args.url_format == 'dirsearch':
+			print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s.csv' % (schema,domain,port,ip,ip,domain) for schema,ip,port,domain in urls]))
+		if args.url_format == 'ffuf':
+			print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
 
 
 if __name__ == '__main__':
