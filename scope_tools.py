@@ -128,6 +128,7 @@ def main():
 	if args.mode == 'reverse':
 		parsed = get_scope(args)
 		domains = get_pt_domains(parsed)
+		domains = list(set(domains))
 		print ('\n'.join(domains))
 		exit(0)
 	if args.mode == 'resolve':
