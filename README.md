@@ -1,3 +1,13 @@
+
+## Prepare
+
+Install dependencies
+
+Then add API key for passive total:
+```pt-config setup <USERNAME> <API_KEY>```
+
+## Help
+
 usage: scope_tools.py [-h] [-s SCOPE] [-d DOMAINS] [-r RESOLVER] [--only-ips]
                       [--only-in-scope ONLY_IN_SCOPE]
                       {parse_scope,reverse,resolve}
