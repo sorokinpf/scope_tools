@@ -134,7 +134,6 @@ def main():
 		if args.domains is None:
 			print ('--domains required for parse_scope')
 			exit(1)
-		print ('resolver: ', args.resolver)
 		domains = open(args.domains).read().split('\n')
 		only_in_scope = None
 		if args.only_in_scope is not None:

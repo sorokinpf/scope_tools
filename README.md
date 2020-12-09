@@ -8,6 +8,7 @@ Then add API key for passive total:
 
 ## Help
 
+```
 usage: scope_tools.py [-h] [-s SCOPE] [-d DOMAINS] [-r RESOLVER] [--only-ips]
                       [--only-in-scope ONLY_IN_SCOPE]
                       {parse_scope,reverse,resolve}
@@ -27,3 +28,4 @@ optional arguments:
   --only-ips            print only ips
   --only-in-scope ONLY_IN_SCOPE
                         file with scope ips
+```
