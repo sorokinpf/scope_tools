@@ -238,7 +238,7 @@ def main():
 									ip_domains_filename = args.ips_domains,
 									one_per_port=args.one_per_port)
 		if args.url_format == 'dirsearch':
-			print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s.csv' % (schema,domain,port,ip,ip,domain) for schema,ip,port,domain in urls]))
+			print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s-%s-%s.csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
 		if args.url_format == 'ffuf':
 			print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
 
