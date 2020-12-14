@@ -118,6 +118,14 @@ def get_http_from_nmap(nmap_filename):
             results.append((ip,portnum,ssl))
     return results
 
+def get_http_from_cpt(cpt_filename):
+	data = open(cpt_filename).read().replace('"','').split('\n')[1:]
+	data = map(lambda x: x.split(';'),data)
+	data = filter(lambda x: len(x)==6,data)
+	data = filter(lambda x: x[4]=='open',data)
+	data = filter(lambda x: 'http' in x[2],data)
+	data = map(lambda x: (x[0],x[1],'https' in x[2]),data)
+	return list(data)
 
 def parse_ip_domain_file(filename):
 
@@ -133,8 +141,17 @@ def parse_ip_domain_file(filename):
             results[parts[0]] = [parts[1]]
     return results
 
-def build_urls_from_nmap(nmap_filename,ip_domains_filename = None,one_per_port = False):
-    urls = get_http_from_nmap(nmap_filename)
+def build_urls(filename,
+						ip_domains_filename = None,
+						one_per_port = False,
+						input_format='nmap'):
+    if input_format=='nmap':
+    	urls = get_http_from_nmap(filename)
+    elif input_format=='cpt':
+    	urls = get_http_from_cpt(filename)
+    else:
+    	print ('format %s not supported'%input_format)
+    	exit(1)
     if ip_domains_filename is None:
         return [('https' if url[2] else 'http', url[0], url[1], url[0]) for url in urls]
     ip_domains_table = parse_ip_domain_file(ip_domains_filename)
@@ -172,7 +189,7 @@ def get_scope(args):
 
 
 def main():
-	modes = ['parse_scope','reverse','resolve','nmap_http']
+	modes = ['parse_scope','reverse','resolve','build_http']
 	parser = argparse.ArgumentParser()
 	parser.add_argument("mode", help="mode - one of %s"%str(modes), choices= modes)
 	parser.add_argument("-s","--scope",	help = "scope file")
@@ -180,7 +197,8 @@ def main():
 	parser.add_argument("-r","--resolver", help = "DNS resolver", action='append')
 	parser.add_argument("--only-ips", help = "print only ips",default=False, action='store_true')
 	parser.add_argument("--only-in-scope", help = 'file with scope ips')
-	parser.add_argument('--nmap', help='nmap XML scan results')
+	parser.add_argument('--input', help='input file for building http')
+	parser.add_argument('--input-format',choices= ['nmap','cpt'],default='nmap')
 	parser.add_argument('--ips-domains', 
 					help = 'file with \'IP\tdomain\' per line, result of \'resolve\' mode')
 	parser.add_argument('--one-per-port', 
@@ -230,13 +248,14 @@ def main():
 		else:
 			for ip in res:
 				print ('\n'.join(['%s\t%s'%(ip,domain) for domain in res[ip]]))
-	if args.mode == 'nmap_http':
-		if args.nmap is None:
-			print ('--nmap required for this mode')
+	if args.mode == 'build_http':
+		if args.input is None:
+			print ('--input required for this mode')
 			exit(1)
-		urls = build_urls_from_nmap(args.nmap,
-									ip_domains_filename = args.ips_domains,
-									one_per_port=args.one_per_port)
+		urls = build_urls(args.input,
+								input_format = args.input_format,
+								ip_domains_filename = args.ips_domains,
+								one_per_port=args.one_per_port)
 		if args.url_format == 'dirsearch':
 			print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s-%s-%s.csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
 		if args.url_format == 'ffuf':
