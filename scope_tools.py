@@ -14,7 +14,7 @@ from nslookup import Nslookup
 import xml.etree.ElementTree as ElementTree
 from concurrent.futures import ThreadPoolExecutor
 
-workers = 50
+workers = 8
 
 def gen_network(st):
 	st = st.strip()
