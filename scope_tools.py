@@ -5,13 +5,16 @@ import sys
 import socket
 import os.path
 import netaddr
-from functools import reduce
+from functools import reduce,partial
 import argparse
 import pyjq
 from passivetotal.libs.dns import DnsRequest
 from passivetotal.libs.dns import DnsResponse
 from nslookup import Nslookup
 import xml.etree.ElementTree as ElementTree
+from concurrent.futures import ThreadPoolExecutor
+
+workers = 50
 
 def gen_network(st):
 	st = st.strip()
@@ -57,7 +60,11 @@ def get_pt_domains_single_ip(ip):
 
 def get_pt_domains(ip_or_ips_list):
     if isinstance(ip_or_ips_list,list):
-        domains = [get_pt_domains_single_ip(ip) for ip in ip_or_ips_list]
+        #domains = [get_pt_domains_single_ip(ip) for ip in ip_or_ips_list]
+        
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            domains = pool.map(get_pt_domains_single_ip,ip_or_ips_list)
+            domains = list(domains)
         return list(reduce(lambda x,y: x+y,domains))
     else:
         return get_pt_domains_single_ip(ip_or_ips_list)
@@ -68,14 +75,23 @@ def resolve_domain(domain, dns_servers = []):
 
 def resolve_domains(domains, dns_servers = [], only_ips=False, only_in_scope=None):
     if only_ips:
-        ips = [resolve_domain(domain,dns_servers) for domain in domains]
+        ips = []
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            resolve_domain_func = partial(resolve_domain,dns_servers=dns_servers)
+            ips = pool.map(resolve_domain_func,domains)
+        #ips = [resolve_domain(domain,dns_servers) for domain in domains]
         ips = list(reduce(lambda x,y: x+y,ips))
         ips = list(set(ips))
         if only_in_scope is not None:
             ips = list(filter(lambda x: x in only_in_scope,ips))
         ips = sort_ips(ips)
         return ips
-    pairs = [(domain,resolve_domain(domain,dns_servers)) for domain in domains]
+    resolved = []
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        resolve_domain_func = partial(resolve_domain,dns_servers=dns_servers)
+        resolved = pool.map(resolve_domain_func,domains)
+    pairs = zip(domains,resolved)
+    #pairs = [(domain,resolve_domain(domain,dns_servers)) for domain in domains]
     result = {}
     for pair in pairs:
         for ip in pair[1]:
