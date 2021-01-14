@@ -1,7 +1,7 @@
 
-## Prepare
+## Install
 
-Install dependencies
+```pip install -r requirements.txt```
 
 Then add API key for passive total:
 ```pt-config setup <USERNAME> <API_KEY>```
@@ -10,12 +10,15 @@ Then add API key for passive total:
 
 ```
 usage: scope_tools.py [-h] [-s SCOPE] [-d DOMAINS] [-r RESOLVER] [--only-ips]
-                      [--only-in-scope ONLY_IN_SCOPE]
-                      {parse_scope,reverse,resolve}
+                      [--only-in-scope ONLY_IN_SCOPE] [--input INPUT]
+                      [--input-format {nmap,cpt}] [--ips-domains IPS_DOMAINS]
+                      [--one-per-port] [--url-format {dirsearch,ffuf}]
+                      {parse_scope,reverse,resolve,build_http}
 
 positional arguments:
-  {parse_scope,reverse,resolve}
-                        mode - one of ['parse_scope', 'reverse', 'resolve']
+  {parse_scope,reverse,resolve,build_http}
+                        mode - one of ['parse_scope', 'reverse', 'resolve',
+                        'build_http']
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -28,6 +31,15 @@ optional arguments:
   --only-ips            print only ips
   --only-in-scope ONLY_IN_SCOPE
                         file with scope ips
+  --input INPUT         input file for building http
+  --input-format {nmap,cpt}
+  --ips-domains IPS_DOMAINS
+                        file with 'IP domain' per line, result of 'resolve'
+                        mode
+  --one-per-port        return only one line for every nmap port even if more
+                        than 1 domain resolve to this IP
+  --url-format {dirsearch,ffuf}
+                        one of ['dirsearch', 'ffuf']
 ```
 
 ## Заметка

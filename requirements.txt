@@ -1,0 +1,4 @@
+pyjq
+nslookup
+netaddr
+passivetotal
