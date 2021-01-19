@@ -31,6 +31,8 @@ optional arguments:
   --only-ips            print only ips
   --only-in-scope ONLY_IN_SCOPE
                         file with scope ips
+  --only-not-in-scope ONLY_NOT_IN_SCOPE
+                        file with scope ips for exclude
   --input INPUT         input file for building http
   --input-format {nmap,cpt}
   --ips-domains IPS_DOMAINS
@@ -51,11 +53,14 @@ optional arguments:
 ```
 scope_tools reverse -s scope > reversed_domains.txt
 ```
+
 2. резолв полученных доменов с отсеиванием тех что не в скоупе:
 ```
 scope_tools resolve -d reversed_domains.txt --only-in-scope scope > scope_domains.txt - так получаем связки IP:domain
 scope_tools resolve -d reversed_domains.txt --only-ips --only-in-scope scope > scope_ips.txt - так только IP
+scope_tools resolve -d reversed_domains.txt --only-not-in-scope scope > scope_ips.txt - так только те что вне скоупа, так сказать на согласование
 ```
+
 3. Строим ссылки для брутфорса на основе скана nmap и резолвленных доменов:
 ```
 scope_tools nmap_http --nmap nmap_scan.xml --ips-domains scope_domains.txt --url-format dirsearch - c доменами

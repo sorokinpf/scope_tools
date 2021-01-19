@@ -86,7 +86,9 @@ def resolve_domain(domain, dns_servers = []):
     lookuper = Nslookup(dns_servers=dns_servers)
     return lookuper.dns_lookup(domain).answer
 
-def resolve_domains(domains, dns_servers = [], only_ips=False, only_in_scope=None):
+def resolve_domains(domains, dns_servers = [], 
+                    only_ips=False, only_in_scope=None,
+                    only_not_in_scope=None):
     if only_ips:
         ips = []
         with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -97,6 +99,8 @@ def resolve_domains(domains, dns_servers = [], only_ips=False, only_in_scope=Non
         ips = list(set(ips))
         if only_in_scope is not None:
             ips = list(filter(lambda x: x in only_in_scope,ips))
+        if only_not_in_scope is not None:
+            ips = list(filter(lambda x: x not in only_not_in_scope,ips))
         ips = sort_ips(ips)
         return ips
     resolved = []
@@ -114,6 +118,9 @@ def resolve_domains(domains, dns_servers = [], only_ips=False, only_in_scope=Non
                 result[ip] = [pair[0]]
     if only_in_scope is not None:
         filtered_ips = list(filter(lambda x: x in only_in_scope,result))
+        result = {k: result[k] for k in filtered_ips}
+    if only_not_in_scope is not None:
+        filtered_ips = list(filter(lambda x: x not in only_not_in_scope,result))
         result = {k: result[k] for k in filtered_ips}
     result = {k : result[k] for k in sorted(result,key=dword_from_ip)}
     return result
@@ -226,6 +233,7 @@ def main():
     parser.add_argument("-r","--resolver", help = "DNS resolver", action='append')
     parser.add_argument("--only-ips", help = "print only ips",default=False, action='store_true')
     parser.add_argument("--only-in-scope", help = 'file with scope ips')
+    parser.add_argument("--only-not-in-scope", help = 'file with scope ips for exclude')
     parser.add_argument('--input', help='input file for building http')
     parser.add_argument('--input-format',choices= ['nmap','cpt'],default='nmap')
     parser.add_argument('--ips-domains', 
@@ -267,12 +275,18 @@ def main():
         domains = open(args.domains).read().lower().split('\n')
         domains = list(set(domains))
         only_in_scope = None
+        only_not_in_scope = None
         if args.only_in_scope is not None:
             only_in_scope = read_scope_file(args.only_in_scope)
+        if args.only_not_in_scope is not None:
+            only_not_in_scope = read_scope_file(args.only_not_in_scope)
+        
+
         res = resolve_domains(  domains,
                                 dns_servers = args.resolver,
                                 only_ips = args.only_ips,
-                                only_in_scope = only_in_scope)
+                                only_in_scope = only_in_scope,
+                                only_not_in_scope = only_not_in_scope)
         if args.only_ips:
             print ('\n'.join(res))
         else:
