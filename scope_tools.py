@@ -149,8 +149,14 @@ def get_http_from_nmap(nmap_filename):
             if 'http' not in service.attrib['name']:
                 continue
             ssl=False
-            if ('tunnel' in service.attrib) and (service.attrib['tunnel']=='ssl'):
-                ssl=True
+            if ('tunnel' in service.attrib):
+                if (service.attrib['tunnel']=='ssl'):
+                    ssl=True
+            else:
+                if portnum in ['8443','443']:
+                    ssl=True
+
+
             results.append((ip,portnum,ssl))
     return results
 
@@ -242,11 +248,11 @@ def main():
                     help = 'return only one line for every nmap port even if more than 1 domain resolve to this IP',
                     default=False, 
                     action='store_true')
-    url_formats = ['dirsearch','ffuf']
+    url_formats = ['dirsearch','ffuf','url']
     parser.add_argument('--url-format',
                     help ='one of %s'%str(url_formats),
                     choices=url_formats,
-                    default='dirsearch')
+                    default='url')
     '''parser.add_argument("-c","--column",
                         help="column names. For get mode could by comma separated array of columns")
     parser.add_argument("-w", "--where", 
@@ -304,6 +310,8 @@ def main():
             print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s-%s-%s.csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
         if args.url_format == 'ffuf':
             print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
+        if args.url_format == 'url':
+            print ('\n'.join(['%s://%s:%s' % (schema,ip,port) for schema,ip,port,domain in urls]))
 
 
 if __name__ == '__main__':

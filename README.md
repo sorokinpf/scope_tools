@@ -63,9 +63,9 @@ scope_tools resolve -d reversed_domains.txt --only-not-in-scope scope > scope_ip
 
 3. Строим ссылки для брутфорса на основе скана nmap и резолвленных доменов:
 ```
-scope_tools nmap_http --nmap nmap_scan.xml --ips-domains scope_domains.txt --url-format dirsearch - c доменами
-scope_tools nmap_http --nmap nmap_scan.xml --ips-domains scope_domains.txt --url-format dirsearch --one-per-port - c доменами, но по 1 штуке на IP, если у нас много IP с большим количеством доменов
-scope_tools nmap_http --nmap nmap_scan.xml --url-format dirsearch - только IP
+scope_tools build_http --input-format nmap --input nmap_scan.xml --ips-domains scope_domains.txt --url-format dirsearch - c доменами
+scope_tools build_http --input-format nmap --input nmap_scan.xml --ips-domains scope_domains.txt --url-format dirsearch --one-per-port - c доменами, но по 1 штуке на IP, если у нас много IP с большим количеством доменов
+scope_tools build_http --input-format nmap --input nmap_scan.xml - только IP
 ```
 
 результат можно использовать в parallel чтобы все нахрен не сдохло. Так не больше 10 штук одновременно (больше 10 лучше не запускать, при 20 ведет себя неадекватно, например не грузит zsh):
