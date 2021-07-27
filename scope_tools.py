@@ -201,12 +201,14 @@ def build_urls(filename,
 
     results_other = []
 
+
+
     for ip,port,ssl in urls:
+
         if ip not in ip_domains_table:
             #u = '%s://%s:%s'%('https' if ssl else 'http', ip, port)
             results.append(('https' if ssl else 'http', ip, port,ip))
             continue
-        
         #u = '%s://%s:%s'%('https' if ssl else 'http', ip_domains_table[ip][0], port)
         results.append(('https' if ssl else 'http', ip, port,ip_domains_table[ip][0]))
         #results.append((u,ip))
@@ -313,7 +315,7 @@ def main():
         if args.url_format == 'ffuf':
             print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
         if args.url_format == 'url':
-            print ('\n'.join(['%s://%s:%s' % (schema,ip,port) for schema,ip,port,domain in urls]))
+            print ('\n'.join(['%s://%s:%s' % (schema,domain,port) for schema,ip,port,domain in urls]))
 
 
 if __name__ == '__main__':
