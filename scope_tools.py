@@ -248,7 +248,7 @@ def main():
                     help = 'return only one line for every nmap port even if more than 1 domain resolve to this IP',
                     default=False, 
                     action='store_true')
-    url_formats = ['dirsearch','ffuf','url']
+    url_formats = ['dirsearch','ffuf','url','dirsearch_new']
     parser.add_argument('--url-format',
                     help ='one of %s'%str(url_formats),
                     choices=url_formats,
@@ -308,6 +308,8 @@ def main():
                                 one_per_port=args.one_per_port)
         if args.url_format == 'dirsearch':
             print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s-%s-%s.csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
+        if args.url_format == 'dirsearch_new':
+            print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt -o %s-%s-%s-%s.csv --format=csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
         if args.url_format == 'ffuf':
             print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
         if args.url_format == 'url':
