@@ -311,7 +311,7 @@ def main():
         if args.url_format == 'dirsearch':
             print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt --csv-report=%s-%s-%s-%s.csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
         if args.url_format == 'dirsearch_new':
-            print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt -o %s-%s-%s-%s.csv --format=csv' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
+            print ('\n'.join(['dirsearch -u %s://%s:%s --ip %s -e js,jsp,json,php,asp,aspx -w ~/dicts/medium_wordlist.txt -o %s-%s-%s-%s.html --format=html' % (schema,domain,port,ip,ip,port,schema,domain) for schema,ip,port,domain in urls]))
         if args.url_format == 'ffuf':
             print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
         if args.url_format == 'url':
