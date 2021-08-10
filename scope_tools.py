@@ -231,9 +231,12 @@ def get_scope(args):
         exit(1)
     return read_scope_file(args.scope)
 
+def strip_domains(domains):
+    return ['.'.join(domain.split('.')[-2:]) for domain in domains]
+
 
 def main():
-    modes = ['parse_scope','reverse','resolve','build_http']
+    modes = ['parse_scope','reverse','resolve','build_http','strip_domains']
     parser = argparse.ArgumentParser()
     parser.add_argument("mode", help="mode - one of %s"%str(modes), choices= modes)
     parser.add_argument("-s","--scope",    help = "scope file")
@@ -316,6 +319,15 @@ def main():
             print ('\n'.join(['ffuf -u %s://%s:%s -H "Host: %s:%s"' % (schema,ip,port,domain,port) for schema,ip,port,domain in urls]))
         if args.url_format == 'url':
             print ('\n'.join(['%s://%s:%s' % (schema,domain,port) for schema,ip,port,domain in urls]))
+
+    if args.mode == 'strip_domains':
+        if args.domains is None:
+            print ('--domains required for strip_domains')
+            exit(1)
+        domains = open(args.domains).read().lower().split('\n')
+        stripped = strip_domains(domains)
+        print ('\n'.join(['%s %s' %(s,d) for d,s in zip(domains,stripped)]))
+
 
 
 if __name__ == '__main__':
